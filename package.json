@@ -1,0 +1,18 @@
+{
+  "main": "dist/nypd.js",
+  "scripts": {
+    "nypd": "tsc && node dist/nypd.js",
+    "lint": "eslint -c .eslintrc.js --ext .ts src"
+  },
+  "devDependencies": {
+    "@types/node-fetch": "^2.5.8",
+    "@typescript-eslint/eslint-plugin": "^4.17.0",
+    "@typescript-eslint/parser": "^4.17.0",
+    "eslint": "^7.22.0",
+    "eslint-config-google": "^0.14.0",
+    "typescript": "^4.2.3"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.1"
+  }
+}
