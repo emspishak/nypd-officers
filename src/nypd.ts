@@ -1,3 +1,4 @@
+import {writeFile} from 'fs';
 import fetch from 'node-fetch';
 import {Officer, Name} from './officer';
 
@@ -12,7 +13,15 @@ fetch('https://oip.nypdonline.org/oauth2/token', {
   'body': 'grant_type=client_credentials&' +
     'scope=clientId%3D435e66dd-eca9-47fc-be6b-091858a1ca7d',
   'method': 'POST',
-}).then((res) => res.json()).then(fetchOfficers).then(console.log);
+}).then((res) => res.json()).then(fetchOfficers).then(write);
+
+function write(officers: Officer[]) {
+  writeFile('officers.json', JSON.stringify(officers), (err) => {
+    if (err) {
+      throw err;
+    }
+  });
+}
 
 /** Fetch the top level list of officers. */
 function fetchOfficers(auth: any): Promise<Officer[]> {
