@@ -8,7 +8,7 @@ import {Officer, Name} from './officer';
  * a JSON object.
  */
 
-// Set up a scheduler for web requests so this doesn't overload the server. It's
+// Set up a scheduler for web requests so this doesn't overload the server. It
 // would probably work with more tasks, but needs experimentation to determine.
 const scheduler = new Scheduler(10);
 
@@ -107,12 +107,25 @@ function handleOfficer(officer: any, taxId: number): Officer {
 }
 
 function parseName(name: string): Name {
-  const nameRe = new RegExp('(.*), (.*)');
+  // The name format is "LAST, FIRST M", where M is an optional middle initial.
+  // There is at least one first name with a space in it (SUMAN, MD ABDUL A) so
+  // the first name match is lazy so that it consumes all of the first name
+  // (including a space if there is one) but not the optional middle initial.
+  const nameRe = new RegExp('^(.*), (.*?)( (.))?$');
   const match = name.trim().match(nameRe);
-  return {
-    first: match[2],
-    last: match[1],
-  };
+  const middleInitial = match[4];
+  if (middleInitial) {
+    return {
+      first: match[2],
+      middleInitial,
+      last: match[1],
+    };
+  } else {
+    return {
+      first: match[2],
+      last: match[1],
+    };
+  }
 }
 
 /** Fetches the given url with the given auth token and options. */
