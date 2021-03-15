@@ -1,3 +1,4 @@
+import {Scheduler} from 'async-scheduler';
 import {writeFile} from 'fs';
 import fetch from 'node-fetch';
 import {Officer, Name} from './officer';
@@ -6,6 +7,10 @@ import {Officer, Name} from './officer';
  * Scrapes all NYPD officer information from https://nypdonline.org/link/2 into
  * a JSON object.
  */
+
+// Set up a scheduler for web requests so this doesn't overload the server. It's
+// would probably work with more tasks, but needs experimentation to determine.
+const scheduler = new Scheduler(10);
 
 // Some auth setup, requests often fail (rate limiting?) without this.
 fetch('https://oip.nypdonline.org/oauth2/token', {
@@ -26,11 +31,17 @@ function write(officers: Officer[]) {
 /** Fetch the top level list of officers. */
 function fetchOfficers(auth: any): Promise<Officer[]> {
   const token: string = auth.access_token;
-  return fetchPage(1, token)
-      .then((res) => fetchAllOfficers(res, token));
+  const promises: Promise<Officer[]>[] = [];
+  for (let i = 0; i < 26; i++) {
+    const letter = String.fromCharCode(65 + i);
+    promises.push(fetchPage(letter, 1, token)
+        .then((res) => fetchAllOfficers(res, letter, token)));
+  }
+  return Promise.all(promises)
+      .then((officers) => officers.reduce((acc, val) => acc.concat(val), []));
 }
 
-function fetchPage(page: number, token: string): Promise<any> {
+function fetchPage(letter: string, page: number, token: string): Promise<any> {
   return authFetch(
       'https://oip.nypdonline.org/api/reports/2/datasource/serverList?' +
           'aggregate=&filter=&group=&page=' +
@@ -40,11 +51,14 @@ function fetchPage(page: number, token: string): Promise<any> {
           '%22values%22:%5B%22SEARCH_FILTER_VALUE%22%5D%7D,%7B' +
           '%22key%22:%22@LastNameFirstLetter%22,' +
           '%22label%22:%22Last+Name+First+Letter%22,' +
-          '%22values%22:%5B%22A%22%5D%7D%5D%7D&sort=',
+          '%22values%22:%5B%22' +
+          letter +
+          '%22%5D%7D%5D%7D&sort=',
       token);
 }
 
-function fetchAllOfficers(json: any, token: string): Promise<Officer[]> {
+function fetchAllOfficers(json: any, letter: string, token: string):
+    Promise<Officer[]> {
   const totalOfficers: number = json.Total;
   const pages = Math.ceil(totalOfficers / 100);
 
@@ -52,7 +66,8 @@ function fetchAllOfficers(json: any, token: string): Promise<Officer[]> {
       [Promise.resolve(handleOfficers(json, token))];
   for (let i = 2; i <= pages; i++) {
     promises.push(
-        fetchPage(i, token).then((json) => handleOfficers(json, token)));
+        fetchPage(letter, i, token)
+            .then((json) => handleOfficers(json, token)));
   }
   // Convert Promise<Promise<Officer>[]>[] into Promise<Promise<Officer>[][]>
   return Promise.all(promises)
@@ -109,5 +124,5 @@ function authFetch(url: string, token: string, options?: any): Promise<any> {
     options.headers = {};
   }
   options.headers['Cookie'] = 'user=' + token;
-  return fetch(url, options).then((res) => res.json());
+  return scheduler.enqueue(() => fetch(url, options).then((res) => res.json()));
 }
