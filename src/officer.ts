@@ -8,6 +8,8 @@ export interface Officer {
   readonly rank: Rank;
   /** The date the officer first joined NYPD. */
   readonly appointmentDate: Date;
+  /** The officer's command, e.g. precinct. */
+  readonly command: string;
 }
 
 /** An officer's name. */
