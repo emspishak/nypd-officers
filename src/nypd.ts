@@ -130,7 +130,12 @@ function parseName(name: string): Name {
   // the first name match is lazy so that it consumes all of the first name
   // (including a space if there is one) but not the optional middle initial.
   const nameRe = new RegExp('^(.*), (.*?)( (.))?$');
-  const match = name.trim().match(nameRe);
+  let match = name.trim().match(nameRe);
+
+  if (match === null) {
+    console.log(`ERROR: could not parse name: ${name}`);
+    match = ['', 'error_missing', 'error_missing'];
+  }
 
   return {
     first: match[2],
