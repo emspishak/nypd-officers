@@ -1,7 +1,7 @@
 import {Scheduler} from 'async-scheduler';
 import {writeFile} from 'fs';
 import fetch from 'node-fetch';
-import {Name, Officer, Rank} from './officer';
+import {Date, Month, Name, Officer, Rank} from './officer';
 import yargs from 'yargs';
 import {hideBin} from 'yargs/helpers';
 
@@ -23,6 +23,12 @@ const argv = yargs(hideBin(process.argv))
 // Set up a scheduler for web requests so this doesn't overload the server. It
 // would probably work with more tasks, but needs experimentation to determine.
 const scheduler = new Scheduler(10);
+
+const unknownDate = {
+  year: -1,
+  month: Month.ERROR_UNKNOWN,
+  day: -1,
+};
 
 // Some auth setup, requests often fail (rate limiting?) without this.
 fetch('https://oip.nypdonline.org/oauth2/token', {
@@ -141,6 +147,7 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
   const officer = officerWrap[0];
 
   let rank: Rank = Rank.ERROR_UNKNOWN;
+  let appointmentDate: Date = unknownDate;
 
   officer.Items.forEach((item: any) => {
     const value: any = item.Value;
@@ -242,6 +249,9 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
             console.log(`ERROR: unknown rank: ${value}`);
         }
         break;
+      case '20e891ce-1dcf-4d46-9185-075336788d65':
+        appointmentDate = parseDate(value);
+        break;
     }
   });
 
@@ -249,6 +259,7 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
     taxId,
     name: parseName(officer.Label),
     rank,
+    appointmentDate,
   };
 }
 
@@ -272,6 +283,76 @@ function parseName(name: string): Name {
     middleInitial: match[4],
     last: match[1],
   };
+}
+
+function parseDate(date: string): Date {
+  const dateRe = new RegExp('^(\\d{1,2})/(\\d{1,2})/(\\d{4}) 12:00:00 AM$');
+  const match = date.match(dateRe);
+
+  if (match == null) {
+    console.log(`ERROR: could not parse date: ${date}`);
+    return unknownDate;
+  }
+
+  return {
+    year: parseYear(match[3]),
+    month: parseMonth(match[1]),
+    day: parseDay(match[2]),
+  };
+}
+
+function parseYear(yearStr: string): number {
+  const year: number = parseInt(yearStr);
+
+  if (year < 1900 || year > 2100) {
+    console.log(`ERROR: could not parse year ${yearStr}`);
+    return -1;
+  }
+
+  return year;
+}
+
+function parseMonth(month: string): Month {
+  switch (month) {
+    case '1':
+      return Month.JANUARY;
+    case '2':
+      return Month.FEBRUARY;
+    case '3':
+      return Month.MARCH;
+    case '4':
+      return Month.APRIL;
+    case '5':
+      return Month.MAY;
+    case '6':
+      return Month.JUNE;
+    case '7':
+      return Month.JULY;
+    case '8':
+      return Month.AUGUST;
+    case '9':
+      return Month.SEPTEMBER;
+    case '10':
+      return Month.OCTOBER;
+    case '11':
+      return Month.NOVEMBER;
+    case '12':
+      return Month.DECEMBER;
+    default:
+      console.log(`ERROR: unknown month: ${month}`);
+      return Month.ERROR_UNKNOWN;
+  }
+}
+
+function parseDay(dayStr: string): number {
+  const day: number = parseInt(dayStr);
+
+  if (day < 1 || day > 31) {
+    console.log(`ERROR: could not parse day ${dayStr}`);
+    return -1;
+  }
+
+  return day;
 }
 
 /** Fetches the given url with the given auth token and options. */
