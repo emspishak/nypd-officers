@@ -32,8 +32,15 @@ fetch('https://oip.nypdonline.org/oauth2/token', {
   'method': 'POST',
 }).then((res) => res.json()).then(fetchOfficers).then(write);
 
-function write(officers: Officer[]) {
-  writeFile('officers.json', JSON.stringify(officers), (err) => {
+function write(officers: (Officer | null)[]) {
+  const filtered: Officer[] = [];
+  officers.forEach((nullable) => {
+    if (nullable !== null) {
+      filtered.push(nullable);
+    }
+  });
+  const officersString = JSON.stringify(filtered);
+  writeFile('officers.json', officersString, (err) => {
     if (err) {
       throw err;
     }
@@ -41,13 +48,16 @@ function write(officers: Officer[]) {
 }
 
 /** Fetch the top level list of officers. */
-function fetchOfficers(auth: any): Promise<Officer[]> {
+function fetchOfficers(auth: any): Promise<(Officer | null)[]> {
   const token: string = auth.access_token;
-  const promises: Promise<Officer[]>[] = [];
+  const promises: Promise<(Officer | null)[]>[] = [];
   for (let i = 0; i < 26; i++) {
     const letter = String.fromCharCode(65 + i);
     promises.push(fetchPage(letter, 1, token)
-        .then((res) => fetchAllOfficers(res, letter, token)));
+        .then((res) => fetchAllOfficers(res, letter, token), (err) => {
+          console.log(`ERROR: error fetching page 1 of ${letter}`, err);
+          return [];
+        }));
   }
   return Promise.all(promises)
       .then((officers) => officers.reduce((acc, val) => acc.concat(val), []));
@@ -70,17 +80,22 @@ function fetchPage(letter: string, page: number, token: string): Promise<any> {
 }
 
 function fetchAllOfficers(json: any, letter: string, token: string):
-    Promise<Officer[]> {
+    Promise<(Officer | null)[]> {
   const totalOfficers: number = json.Total;
   const pages = Math.ceil(totalOfficers / 100);
 
-  const promises: Promise<Promise<Officer>[]>[] =
+  const promises: Promise<Promise<Officer | null>[]>[] =
       [Promise.resolve(handleOfficers(json, token))];
   if (!argv.sample) {
     for (let i = 2; i <= pages; i++) {
       promises.push(
           fetchPage(letter, i, token)
-              .then((json) => handleOfficers(json, token)));
+              .then((json) => handleOfficers(json, token), (err) => {
+                console.log(
+                    `ERROR: error fetching page ${i} of ${letter}`,
+                    err);
+                return Promise.resolve(Promise.resolve([]));
+              }));
     }
   }
   // Convert Promise<Promise<Officer>[]>[] into Promise<Promise<Officer>[][]>
@@ -92,7 +107,7 @@ function fetchAllOfficers(json: any, letter: string, token: string):
 }
 
 /** Fetches all data about every officer. */
-function handleOfficers(json: any, token: string): Promise<Officer>[] {
+function handleOfficers(json: any, token: string): Promise<Officer | null>[] {
   let data: any[] = json.Data;
   if (argv.sample) {
     data = data.slice(0, 10);
@@ -109,18 +124,25 @@ function handleOfficers(json: any, token: string): Promise<Officer>[] {
             'Content-Type': 'application/json',
           },
         })
-        .then((officers) => handleOfficer(officers, taxId));
+        .then((officers) => handleOfficer(officers, taxId), (err) => {
+          console.log(`ERROR: error fetching tax ID ${taxId}`, err);
+          return null;
+        });
   });
 }
 
 /** Converts an officer's JSON into an Officer object. */
-function handleOfficer(officer: any, taxId: number): Officer {
-  if (officer.length != 1) {
-    throw new Error('multiple elements in ' + officer);
+function handleOfficer(officerWrap: any, taxId: number): Officer | null {
+  if (officerWrap.length != 1) {
+    console.log(
+        `${officerWrap.length} elements in ${officerWrap} for ${taxId}`);
+    return null;
   }
+  const officer = officerWrap[0];
+
   return {
     taxId,
-    name: parseName(officer[0].Label),
+    name: parseName(officer.Label),
   };
 }
 
