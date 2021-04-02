@@ -2,6 +2,18 @@ import {Scheduler} from 'async-scheduler';
 import {writeFile} from 'fs';
 import fetch from 'node-fetch';
 import {Officer, Name} from './officer';
+import yargs from 'yargs';
+import {hideBin} from 'yargs/helpers';
+
+const argv = yargs(hideBin(process.argv))
+    .option('sample', {
+      description: 'Only fetch a sample of records. This fetches the first ' +
+        '10 records from each letter and is useful for testing since it runs ' +
+        'much quicker.',
+      type: 'boolean',
+    })
+    .help()
+    .argv;
 
 /**
  * Scrapes all NYPD officer information from https://nypdonline.org/link/2 into
@@ -64,10 +76,12 @@ function fetchAllOfficers(json: any, letter: string, token: string):
 
   const promises: Promise<Promise<Officer>[]>[] =
       [Promise.resolve(handleOfficers(json, token))];
-  for (let i = 2; i <= pages; i++) {
-    promises.push(
-        fetchPage(letter, i, token)
-            .then((json) => handleOfficers(json, token)));
+  if (!argv.sample) {
+    for (let i = 2; i <= pages; i++) {
+      promises.push(
+          fetchPage(letter, i, token)
+              .then((json) => handleOfficers(json, token)));
+    }
   }
   // Convert Promise<Promise<Officer>[]>[] into Promise<Promise<Officer>[][]>
   return Promise.all(promises)
@@ -79,7 +93,11 @@ function fetchAllOfficers(json: any, letter: string, token: string):
 
 /** Fetches all data about every officer. */
 function handleOfficers(json: any, token: string): Promise<Officer>[] {
-  return json.Data.map((officer) => {
+  let data: any[] = json.Data;
+  if (argv.sample) {
+    data = data.slice(0, 10);
+  }
+  return data.map((officer) => {
     const taxId = parseInt(officer.RowValue);
     return authFetch(
         'https://oip.nypdonline.org/api/reports/1/datasource/list',

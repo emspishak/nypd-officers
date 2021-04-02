@@ -6,6 +6,7 @@
   },
   "devDependencies": {
     "@types/node-fetch": "^2.5.8",
+    "@types/yargs": "^16.0.1",
     "@typescript-eslint/eslint-plugin": "^4.17.0",
     "@typescript-eslint/parser": "^4.17.0",
     "eslint": "^7.22.0",
@@ -14,6 +15,7 @@
   },
   "dependencies": {
     "async-scheduler": "^1.4.3",
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^2.6.1",
+    "yargs": "^16.2.0"
   }
 }
