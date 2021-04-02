@@ -1,7 +1,7 @@
 import {Scheduler} from 'async-scheduler';
 import {writeFile} from 'fs';
 import fetch from 'node-fetch';
-import {Date, Month, Name, Officer, Rank} from './officer';
+import {Date, Ethnicity, Month, Name, Officer, Rank} from './officer';
 import yargs from 'yargs';
 import {hideBin} from 'yargs/helpers';
 
@@ -150,6 +150,7 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
   let appointmentDate: Date = unknownDate;
   let command: string = 'ERROR_UNKNOWN';
   let assignmentDate: Date = unknownDate;
+  let ethnicity: Ethnicity = Ethnicity.ERROR_UNKNOWN;
 
   officer.Items.forEach((item: any) => {
     const value: any = item.Value;
@@ -260,6 +261,10 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
       case '8a2bcb6f-e064-44f4-8a58-8f38aa6ebae9':
         assignmentDate = parseDate(value);
         break;
+      case '0ec90f94-b636-474c-bec7-ab04e73540ed':
+        // Ethnicity seems to have a bunch a spaces at the end.
+        ethnicity = parseEthnicity(value.trim());
+        break;
     }
   });
 
@@ -270,6 +275,7 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
     appointmentDate,
     command,
     assignmentDate,
+    ethnicity,
   };
 }
 
@@ -363,6 +369,24 @@ function parseDay(dayStr: string): number {
   }
 
   return day;
+}
+
+function parseEthnicity(ethnicity: string): Ethnicity {
+  switch (ethnicity) {
+    case 'ASIAN':
+      return Ethnicity.ASIAN;
+    case 'BLACK':
+      return Ethnicity.BLACK;
+    case 'HISPANIC':
+      return Ethnicity.HISPANIC;
+    case 'NATIVE AMERICAN':
+      return Ethnicity.NATIVE_AMERICAN;
+    case 'WHITE':
+      return Ethnicity.WHITE;
+    default:
+      console.log(`ERROR: unknown ethnicity ${ethnicity}`);
+      return Ethnicity.ERROR_UNKNOWN;
+  }
 }
 
 /** Fetches the given url with the given auth token and options. */

@@ -12,6 +12,8 @@ export interface Officer {
   readonly command: string;
   /** The date the officer was assigned to their current command. */
   readonly assignmentDate: Date;
+  /** The officer's ethnicity. */
+  readonly ethnicity: Ethnicity;
 }
 
 /** An officer's name. */
@@ -101,4 +103,14 @@ export enum Month {
   OCTOBER = 10,
   NOVEMBER = 11,
   DECEMBER = 12,
+}
+
+/** NYPD reported ethnicity (these are the only five NYPD provides). */
+export enum Ethnicity {
+  ERROR_UNKNOWN = 'ERROR_UNKNOWN',
+  ASIAN = 'ASIAN',
+  BLACK = 'BLACK',
+  HISPANIC = 'HISPANIC',
+  NATIVE_AMERICAN = 'NATIVE_AMERICAN',
+  WHITE = 'WHITE',
 }
