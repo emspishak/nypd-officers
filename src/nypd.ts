@@ -113,19 +113,14 @@ function parseName(name: string): Name {
   // (including a space if there is one) but not the optional middle initial.
   const nameRe = new RegExp('^(.*), (.*?)( (.))?$');
   const match = name.trim().match(nameRe);
-  const middleInitial = match[4];
-  if (middleInitial) {
-    return {
-      first: match[2],
-      middleInitial,
-      last: match[1],
-    };
-  } else {
-    return {
-      first: match[2],
-      last: match[1],
-    };
-  }
+
+  return {
+    first: match[2],
+    // match[4] will be undefined if there is no middle initial, in which case
+    // JSON.stringify won't include the property in the output.
+    middleInitial: match[4],
+    last: match[1],
+  };
 }
 
 /** Fetches the given url with the given auth token and options. */
