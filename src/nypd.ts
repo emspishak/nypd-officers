@@ -149,6 +149,7 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
   let rank: Rank = Rank.ERROR_UNKNOWN;
   let appointmentDate: Date = unknownDate;
   let command: string = 'ERROR_UNKNOWN';
+  let assignmentDate: Date = unknownDate;
 
   officer.Items.forEach((item: any) => {
     const value: any = item.Value;
@@ -256,6 +257,9 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
       case '1692f3bf-ed70-4b4a-96a1-9131427e4de9':
         command = value;
         break;
+      case '8a2bcb6f-e064-44f4-8a58-8f38aa6ebae9':
+        assignmentDate = parseDate(value);
+        break;
     }
   });
 
@@ -265,6 +269,7 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
     rank,
     appointmentDate,
     command,
+    assignmentDate,
   };
 }
 

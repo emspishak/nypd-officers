@@ -10,6 +10,8 @@ export interface Officer {
   readonly appointmentDate: Date;
   /** The officer's command, e.g. precinct. */
   readonly command: string;
+  /** The date the officer was assigned to their current command. */
+  readonly assignmentDate: Date;
 }
 
 /** An officer's name. */
