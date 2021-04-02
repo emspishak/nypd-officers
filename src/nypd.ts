@@ -1,7 +1,7 @@
 import {Scheduler} from 'async-scheduler';
 import {writeFile} from 'fs';
 import fetch from 'node-fetch';
-import {Officer, Name} from './officer';
+import {Name, Officer, Rank} from './officer';
 import yargs from 'yargs';
 import {hideBin} from 'yargs/helpers';
 
@@ -140,9 +140,115 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
   }
   const officer = officerWrap[0];
 
+  let rank: Rank = Rank.ERROR_UNKNOWN;
+
+  officer.Items.forEach((item: any) => {
+    const value: any = item.Value;
+    switch (item.Id) {
+      case 'a2fded09-5439-4b17-9da8-81a5643ec3e8':
+        switch (value) {
+          case 'POLICE OFFICER':
+          case 'POLICE_OFFICER':
+            rank = Rank.POLICE_OFFICER;
+            break;
+          case 'DETECTIVE 3RD GRADE':
+            rank = Rank.DETECTIVE_3;
+            break;
+          case 'DETECTIVE 2ND GRADE':
+            rank = Rank.DETECTIVE_2;
+            break;
+          case 'DETECTIVE 1ST GRADE':
+            rank = Rank.DETECTIVE_1;
+            break;
+          case 'DETECTIVE SPECIALIST':
+            rank = Rank.DETECTIVE_SPECIALIST;
+            break;
+          case 'SGT SPECIAL ASSIGN':
+            rank = Rank.SERGEANT_SPECIAL;
+            break;
+          case 'SGT DET SQUAD':
+            rank = Rank.SERGEANT_DET;
+            break;
+          case 'SERGEANT':
+            rank = Rank.SERGEANT;
+            break;
+          case 'LT DET COMMANDER':
+            rank = Rank.LIEUTENANT_DET_COMMANDER;
+            break;
+          case 'LT SPECIAL ASSIGN':
+            rank = Rank.LIEUTENANT_SPECIAL;
+            break;
+          case 'LIEUTENANT':
+            rank = Rank.LIEUTENANT;
+            break;
+          case 'CAPTAIN':
+            rank = Rank.CAPTAIN;
+            break;
+          case 'DEPUTY INSPECTOR':
+            rank = Rank.DEPUTY_INSPECTOR;
+            break;
+          case 'INSPECTOR':
+            rank = Rank.INSPECTOR;
+            break;
+          case 'DEPUTY CHIEF':
+            rank = Rank.DEPUTY_CHIEF;
+            break;
+          case 'ASSISTANT CHIEF':
+            rank = Rank.ASSISTANT_CHIEF;
+            break;
+          case 'CHIEF OF COMMUNITY AFFAIRS':
+            rank = Rank.CHIEF_COMMUNITY_AFFAIRS;
+            break;
+          case 'CHIEF OF CRIME CNTRL STRATEGIES':
+            rank = Rank.CHIEF_CRIME_CNTRL_STRATEGIES;
+            break;
+          case 'CHIEF OF DEPARTMENT':
+            rank = Rank.CHIEF_DEPARTMENT;
+            break;
+          case 'CHIEF OF DETECTIVES':
+            rank = Rank.CHIEF_DETECTIVES;
+            break;
+          case 'CHIEF OF HOUSING':
+            rank = Rank.CHIEF_HOUSING;
+            break;
+          case 'CHIEF OF INTELLIGENCE':
+            rank = Rank.CHIEF_INTELLIGENCE;
+            break;
+          case 'CHIEF OF LABOR REL':
+            rank = Rank.CHIEF_LABOR_REL;
+            break;
+          case 'CHIEF OF OPERATIONS':
+            rank = Rank.CHIEF_OPERATIONS;
+            break;
+          case 'CHIEF OF PATROL':
+            rank = Rank.CHIEF_PATROL;
+            break;
+          case 'CHIEF OF PERSONNEL':
+            rank = Rank.CHIEF_PERSONNEL;
+            break;
+          case 'CHIEF OF SPECIAL OPERATIONS':
+            rank = Rank.CHIEF_SPECIAL_OPERATIONS;
+            break;
+          case 'CHIEF OF TRAINING':
+            rank = Rank.CHIEF_TRAINING;
+            break;
+          case 'CHIEF OF TRANSIT':
+            rank = Rank.CHIEF_TRANSIT;
+            break;
+          case 'CHIEF OF TRANSPORTATION':
+            rank = Rank.CHIEF_TRANSPORTATION;
+            break;
+          default:
+            console.log(`ERROR: unknown rank: ${value}`);
+        }
+        break;
+    }
+  });
+
   return {
     taxId,
     name: parseName(officer.Label),
+    rank,
   };
 }
 
