@@ -146,11 +146,11 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
   }
   const officer = officerWrap[0];
 
-  let rank: Rank = Rank.ERROR_UNKNOWN;
-  let appointmentDate: Date = unknownDate;
-  let command: string = 'ERROR_UNKNOWN';
-  let assignmentDate: Date = unknownDate;
-  let ethnicity: Ethnicity = Ethnicity.ERROR_UNKNOWN;
+  let rank: Rank | null = null;
+  let appointmentDate: Date | null = null;
+  let command: string | null = null;
+  let assignmentDate: Date | null = null;
+  let ethnicity: Ethnicity | null = null;
   let shieldNumber: number | undefined = undefined;
 
   officer.Items.forEach((item: any) => {
@@ -273,8 +273,32 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
           shieldNumber = parseInt(trimmed);
         }
         break;
+      default:
+        console.log(`unknown field for tax ID ${taxId}: ${item.Id} - ${value}`);
+        break;
     }
   });
+
+  if (rank === null) {
+    console.log(`ERROR: missing rank for tax ID ${taxId}`);
+    rank = Rank.ERROR_UNKNOWN;
+  }
+  if (appointmentDate === null) {
+    console.log(`ERROR: missing appointment date for tax ID ${taxId}`);
+    appointmentDate = unknownDate;
+  }
+  if (command === null) {
+    console.log(`ERROR: missing command for tax ID ${taxId}`);
+    command = 'ERROR_UNKNOWN';
+  }
+  if (assignmentDate === null) {
+    console.log(`ERROR: missing assignment date for tax ID ${taxId}`);
+    assignmentDate = unknownDate;
+  }
+  if (ethnicity === null) {
+    console.log(`ERROR: missing ethnicity for tax ID ${taxId}`);
+    ethnicity = Ethnicity.ERROR_UNKNOWN;
+  }
 
   return {
     taxId,
