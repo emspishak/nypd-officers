@@ -14,6 +14,11 @@ export interface Officer {
   readonly assignmentDate: Date;
   /** The officer's ethnicity. */
   readonly ethnicity: Ethnicity;
+  /**
+   * The officer's badge number. This is optional as ranks lieutenant and above
+   * don't have one.
+   */
+  readonly shieldNumber?: number;
 }
 
 /** An officer's name. */

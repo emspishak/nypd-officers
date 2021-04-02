@@ -151,6 +151,7 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
   let command: string = 'ERROR_UNKNOWN';
   let assignmentDate: Date = unknownDate;
   let ethnicity: Ethnicity = Ethnicity.ERROR_UNKNOWN;
+  let shieldNumber: number | undefined = undefined;
 
   officer.Items.forEach((item: any) => {
     const value: any = item.Value;
@@ -265,6 +266,13 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
         // Ethnicity seems to have a bunch a spaces at the end.
         ethnicity = parseEthnicity(value.trim());
         break;
+      case '42f74dfc-ee54-4b25-822f-415615d22aa9':
+        // No shield number is represented as ' '.
+        const trimmed = value.trim();
+        if (trimmed) {
+          shieldNumber = parseInt(trimmed);
+        }
+        break;
     }
   });
 
@@ -276,6 +284,7 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
     command,
     assignmentDate,
     ethnicity,
+    shieldNumber,
   };
 }
 
