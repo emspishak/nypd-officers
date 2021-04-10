@@ -30,6 +30,8 @@ const unknownDate = {
   day: -1,
 };
 
+let officerCount = 0;
+
 // Some auth setup, requests often fail (rate limiting?) without this.
 fetch('https://oip.nypdonline.org/oauth2/token', {
   // This client ID appears to be constant for everyone.
@@ -120,6 +122,7 @@ function handleOfficers(json: any, token: string): Promise<Officer | null>[] {
   }
   return data.map((officer) => {
     const taxId = parseInt(officer.RowValue);
+    const name = findName(officer);
     return authFetch(
         'https://oip.nypdonline.org/api/reports/1/datasource/list',
         token, {
@@ -130,18 +133,26 @@ function handleOfficers(json: any, token: string): Promise<Officer | null>[] {
             'Content-Type': 'application/json',
           },
         })
-        .then((officers) => handleOfficer(officers, taxId), (err) => {
-          console.log(`ERROR: error fetching tax ID ${taxId}`, err);
+        .then((officers) => handleOfficer(officers, taxId, name), (err) => {
+          console.log(`ERROR: error fetching tax ID ${taxId} - ${name}`, err);
           return null;
         });
   });
 }
 
+function findName(officer: {Columns: any[]}): string {
+  const nameCol = officer.Columns.find(
+      (column) => column.Id === '85ed4926-7d4c-4771-a921-f5fe84ac2acc');
+  return nameCol ? nameCol.Value : 'name_missing';
+}
+
 /** Converts an officer's JSON into an Officer object. */
-function handleOfficer(officerWrap: any, taxId: number): Officer | null {
+function handleOfficer(officerWrap: any, taxId: number, debugName: string):
+   Officer | null {
   if (officerWrap.length != 1) {
     console.log(
-        `${officerWrap.length} elements in ${officerWrap} for ${taxId}`);
+        `ERROR: ${officerWrap.length} elements in ${officerWrap} for ${taxId} =
+        ${debugName}`);
     return null;
   }
   const officer = officerWrap[0];
@@ -300,9 +311,17 @@ function handleOfficer(officerWrap: any, taxId: number): Officer | null {
     ethnicity = Ethnicity.ERROR_UNKNOWN;
   }
 
+  const name: Name = parseName(officer.Label);
+
+  officerCount++;
+  if (officerCount % 100 === 0) {
+    console.log(
+        `processed ${officerCount} officers: ${name.first} ${name.last}`);
+  }
+
   return {
     taxId,
-    name: parseName(officer.Label),
+    name,
     rank,
     appointmentDate,
     command,
