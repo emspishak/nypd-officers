@@ -168,101 +168,7 @@ function handleOfficer(officerWrap: any, taxId: number, debugName: string):
     const value: any = item.Value;
     switch (item.Id) {
       case 'a2fded09-5439-4b17-9da8-81a5643ec3e8':
-        switch (value) {
-          case 'POLICE OFFICER':
-          case 'POLICE_OFFICER':
-            rank = Rank.POLICE_OFFICER;
-            break;
-          case 'DETECTIVE 3RD GRADE':
-            rank = Rank.DETECTIVE_3;
-            break;
-          case 'DETECTIVE 2ND GRADE':
-            rank = Rank.DETECTIVE_2;
-            break;
-          case 'DETECTIVE 1ST GRADE':
-            rank = Rank.DETECTIVE_1;
-            break;
-          case 'DETECTIVE SPECIALIST':
-            rank = Rank.DETECTIVE_SPECIALIST;
-            break;
-          case 'SGT SPECIAL ASSIGN':
-            rank = Rank.SERGEANT_SPECIAL;
-            break;
-          case 'SGT DET SQUAD':
-            rank = Rank.SERGEANT_DET;
-            break;
-          case 'SERGEANT':
-            rank = Rank.SERGEANT;
-            break;
-          case 'LT DET COMMANDER':
-            rank = Rank.LIEUTENANT_DET_COMMANDER;
-            break;
-          case 'LT SPECIAL ASSIGN':
-            rank = Rank.LIEUTENANT_SPECIAL;
-            break;
-          case 'LIEUTENANT':
-            rank = Rank.LIEUTENANT;
-            break;
-          case 'CAPTAIN':
-            rank = Rank.CAPTAIN;
-            break;
-          case 'DEPUTY INSPECTOR':
-            rank = Rank.DEPUTY_INSPECTOR;
-            break;
-          case 'INSPECTOR':
-            rank = Rank.INSPECTOR;
-            break;
-          case 'DEPUTY CHIEF':
-            rank = Rank.DEPUTY_CHIEF;
-            break;
-          case 'ASSISTANT CHIEF':
-            rank = Rank.ASSISTANT_CHIEF;
-            break;
-          case 'CHIEF OF COMMUNITY AFFAIRS':
-            rank = Rank.CHIEF_COMMUNITY_AFFAIRS;
-            break;
-          case 'CHIEF OF CRIME CNTRL STRATEGIES':
-            rank = Rank.CHIEF_CRIME_CNTRL_STRATEGIES;
-            break;
-          case 'CHIEF OF DEPARTMENT':
-            rank = Rank.CHIEF_DEPARTMENT;
-            break;
-          case 'CHIEF OF DETECTIVES':
-            rank = Rank.CHIEF_DETECTIVES;
-            break;
-          case 'CHIEF OF HOUSING':
-            rank = Rank.CHIEF_HOUSING;
-            break;
-          case 'CHIEF OF INTELLIGENCE':
-            rank = Rank.CHIEF_INTELLIGENCE;
-            break;
-          case 'CHIEF OF LABOR REL':
-            rank = Rank.CHIEF_LABOR_REL;
-            break;
-          case 'CHIEF OF OPERATIONS':
-            rank = Rank.CHIEF_OPERATIONS;
-            break;
-          case 'CHIEF OF PATROL':
-            rank = Rank.CHIEF_PATROL;
-            break;
-          case 'CHIEF OF PERSONNEL':
-            rank = Rank.CHIEF_PERSONNEL;
-            break;
-          case 'CHIEF OF SPECIAL OPERATIONS':
-            rank = Rank.CHIEF_SPECIAL_OPERATIONS;
-            break;
-          case 'CHIEF OF TRAINING':
-            rank = Rank.CHIEF_TRAINING;
-            break;
-          case 'CHIEF OF TRANSIT':
-            rank = Rank.CHIEF_TRANSIT;
-            break;
-          case 'CHIEF OF TRANSPORTATION':
-            rank = Rank.CHIEF_TRANSPORTATION;
-            break;
-          default:
-            console.log(`ERROR: unknown rank: ${value}`);
-        }
+        rank = parseRank(value);
         break;
       case '20e891ce-1dcf-4d46-9185-075336788d65':
         appointmentDate = parseDate(value);
@@ -329,6 +235,75 @@ function handleOfficer(officerWrap: any, taxId: number, debugName: string):
     ethnicity,
     shieldNumber,
   };
+}
+
+function parseRank(rank: string): Rank | null {
+  switch (rank) {
+    case 'POLICE OFFICER':
+    case 'POLICE_OFFICER':
+      return Rank.POLICE_OFFICER;
+    case 'DETECTIVE 3RD GRADE':
+      return Rank.DETECTIVE_3;
+    case 'DETECTIVE 2ND GRADE':
+      return Rank.DETECTIVE_2;
+    case 'DETECTIVE 1ST GRADE':
+      return Rank.DETECTIVE_1;
+    case 'DETECTIVE SPECIALIST':
+      return Rank.DETECTIVE_SPECIALIST;
+    case 'SGT SPECIAL ASSIGN':
+      return Rank.SERGEANT_SPECIAL;
+    case 'SGT DET SQUAD':
+      return Rank.SERGEANT_DET;
+    case 'SERGEANT':
+      return Rank.SERGEANT;
+    case 'LT DET COMMANDER':
+      return Rank.LIEUTENANT_DET_COMMANDER;
+    case 'LT SPECIAL ASSIGN':
+      return Rank.LIEUTENANT_SPECIAL;
+    case 'LIEUTENANT':
+      return Rank.LIEUTENANT;
+    case 'CAPTAIN':
+      return Rank.CAPTAIN;
+    case 'DEPUTY INSPECTOR':
+      return Rank.DEPUTY_INSPECTOR;
+    case 'INSPECTOR':
+      return Rank.INSPECTOR;
+    case 'DEPUTY CHIEF':
+      return Rank.DEPUTY_CHIEF;
+    case 'ASSISTANT CHIEF':
+      return Rank.ASSISTANT_CHIEF;
+    case 'CHIEF OF COMMUNITY AFFAIRS':
+      return Rank.CHIEF_COMMUNITY_AFFAIRS;
+    case 'CHIEF OF CRIME CNTRL STRATEGIES':
+      return Rank.CHIEF_CRIME_CNTRL_STRATEGIES;
+    case 'CHIEF OF DEPARTMENT':
+      return Rank.CHIEF_DEPARTMENT;
+    case 'CHIEF OF DETECTIVES':
+      return Rank.CHIEF_DETECTIVES;
+    case 'CHIEF OF HOUSING':
+      return Rank.CHIEF_HOUSING;
+    case 'CHIEF OF INTELLIGENCE':
+      return Rank.CHIEF_INTELLIGENCE;
+    case 'CHIEF OF LABOR REL':
+      return Rank.CHIEF_LABOR_REL;
+    case 'CHIEF OF OPERATIONS':
+      return Rank.CHIEF_OPERATIONS;
+    case 'CHIEF OF PATROL':
+      return Rank.CHIEF_PATROL;
+    case 'CHIEF OF PERSONNEL':
+      return Rank.CHIEF_PERSONNEL;
+    case 'CHIEF OF SPECIAL OPERATIONS':
+      return Rank.CHIEF_SPECIAL_OPERATIONS;
+    case 'CHIEF OF TRAINING':
+      return Rank.CHIEF_TRAINING;
+    case 'CHIEF OF TRANSIT':
+      return Rank.CHIEF_TRANSIT;
+    case 'CHIEF OF TRANSPORTATION':
+      return Rank.CHIEF_TRANSPORTATION;
+    default:
+      console.log(`ERROR: unknown rank: ${rank}`);
+      return null;
+  }
 }
 
 function parseName(name: string): Name {
