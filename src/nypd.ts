@@ -1,7 +1,14 @@
 import {Scheduler} from 'async-scheduler';
 import {writeFile} from 'fs';
 import fetch from 'node-fetch';
-import {Date, Ethnicity, Month, Name, Officer, Rank} from './officer';
+import {
+  Date,
+  Ethnicity,
+  Month,
+  Name,
+  Officer,
+  Rank,
+  RankHistoryEntry} from './officer';
 import yargs from 'yargs';
 import {hideBin} from 'yargs/helpers';
 
@@ -123,17 +130,12 @@ function handleOfficers(json: any, token: string): Promise<Officer | null>[] {
   return data.map((officer) => {
     const taxId = parseInt(officer.RowValue);
     const name = findName(officer);
-    return authFetch(
-        'https://oip.nypdonline.org/api/reports/1/datasource/list',
-        token, {
-          method: 'POST',
-          body: '{filters: [{key: "@TAXID", label: "TAXID", values: ["' +
-              taxId + '"]}]}',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
-        .then((officers) => handleOfficer(officers, taxId, name), (err) => {
+    const fetches = [
+      fetchData(1, taxId, token), // Officer profile data
+      fetchData(7, taxId, token), // Rank/shield history
+    ];
+    return Promise.all(fetches)
+        .then((results) => handleOfficer(results, taxId, name), (err) => {
           console.log(`ERROR: error fetching tax ID ${taxId} - ${name}`, err);
           return null;
         });
@@ -146,9 +148,26 @@ function findName(officer: {Columns: any[]}): string {
   return nameCol ? nameCol.Value : 'name_missing';
 }
 
+function fetchData(dataNum: number, taxId: number, token: string):
+    Promise<any> {
+  return authFetch(
+      `https://oip.nypdonline.org/api/reports/${dataNum}/datasource/list`,
+      token, {
+        method: 'POST',
+        body: '{filters: [{key: "@TAXID", label: "TAXID", values: ["' +
+            taxId + '"]}]}',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+}
+
 /** Converts an officer's JSON into an Officer object. */
-function handleOfficer(officerWrap: any, taxId: number, debugName: string):
+function handleOfficer(results: any[], taxId: number, debugName: string):
    Officer | null {
+  const officerWrap = results[0];
+  const rankHistory: RankHistoryEntry[] = parseRankHistory(results[1], taxId);
+
   if (officerWrap.length != 1) {
     console.log(
         `ERROR: ${officerWrap.length} elements in ${officerWrap} for ${taxId} =
@@ -184,11 +203,7 @@ function handleOfficer(officerWrap: any, taxId: number, debugName: string):
         ethnicity = parseEthnicity(value.trim());
         break;
       case '42f74dfc-ee54-4b25-822f-415615d22aa9':
-        // No shield number is represented as ' '.
-        const trimmed = value.trim();
-        if (trimmed) {
-          shieldNumber = parseInt(trimmed);
-        }
+        shieldNumber = parseShieldNumber(value);
         break;
       default:
         console.log(`unknown field for tax ID ${taxId}: ${item.Id} - ${value}`);
@@ -234,6 +249,7 @@ function handleOfficer(officerWrap: any, taxId: number, debugName: string):
     assignmentDate,
     ethnicity,
     shieldNumber,
+    rankHistory,
   };
 }
 
@@ -248,6 +264,8 @@ function parseRank(rank: string): Rank | null {
       return Rank.DETECTIVE_2;
     case 'DETECTIVE 1ST GRADE':
       return Rank.DETECTIVE_1;
+    case 'DETECTIVE':
+      return Rank.DETECTIVE;
     case 'DETECTIVE SPECIALIST':
       return Rank.DETECTIVE_SPECIALIST;
     case 'SGT SPECIAL ASSIGN':
@@ -416,6 +434,66 @@ function parseEthnicity(ethnicity: string): Ethnicity {
   }
 }
 
+function parseShieldNumber(shield: string): number | undefined {
+  // No shield number is represented as ' '.
+  const trimmed = shield.trim();
+  if (trimmed) {
+    return parseInt(trimmed);
+  }
+  return undefined;
+}
+
+function parseRankHistory(json: any[], taxId: number): RankHistoryEntry[] {
+  if (json.length < 1) {
+    console.log(`ERROR: no rank history for ${taxId}`);
+  }
+  const ranks: RankHistoryEntry[] = json.map((e: any) => {
+    let effectiveDate: Date | null = null;
+    let rank: Rank | null = null;
+    let shieldNumber: number | undefined = undefined;
+
+    e.Columns.forEach((col: any) => {
+      const value = col.Value;
+      switch (col.Id) {
+        case '74cead80-e1af-4aa3-9fa0-1dbf30bdf55b':
+          effectiveDate = parseDate(value);
+          break;
+        case '31d512d9-6bac-45d4-8ab2-cbd951e3f216':
+          // This rank sometimes has whitespace at the end.
+          rank = parseRank(value.trim());
+          break;
+        case 'a5a69be2-3fe2-41d6-b174-b6c623cbe702':
+          shieldNumber = parseShieldNumber(value);
+          break;
+        default:
+          console.log(
+              `ERROR: unknown rank history field for ${taxId}: ${col.Id} -
+              ${value}`);
+      }
+    });
+
+    if (effectiveDate === null) {
+      console.log(`ERROR: no effective date for ${taxId} -> ${rank}`);
+      effectiveDate = unknownDate;
+    }
+    if (rank === null) {
+      console.log(
+          `ERROR: no rank for ${taxId} on ${JSON.stringify(effectiveDate)}`);
+      rank = Rank.ERROR_UNKNOWN;
+    }
+
+    return {
+      effectiveDate,
+      rank,
+      shieldNumber,
+    };
+  });
+  ranks.sort((rank1, rank2) => {
+    return compareDate(rank1.effectiveDate, rank2.effectiveDate);
+  });
+  return ranks;
+}
+
 /** Fetches the given url with the given auth token and options. */
 function authFetch(url: string, token: string, options?: any): Promise<any> {
   if (!options) {
@@ -426,4 +504,14 @@ function authFetch(url: string, token: string, options?: any): Promise<any> {
   }
   options.headers['Cookie'] = 'user=' + token;
   return scheduler.enqueue(() => fetch(url, options).then((res) => res.json()));
+}
+
+function compareDate(date1: Date, date2: Date): number {
+  if (date1.year !== date2.year) {
+    return date1.year - date2.year;
+  } else if (date1.month !== date2.month) {
+    return date1.month - date2.month;
+  } else {
+    return date1.day - date2.day;
+  }
 }

@@ -19,6 +19,11 @@ export interface Officer {
    * don't have one.
    */
   readonly shieldNumber?: number;
+  /**
+   * A history of the rank (and shield number). These are sorted from oldest
+   * to most recent.
+   */
+  readonly rankHistory: RankHistoryEntry[];
 }
 
 /** An officer's name. */
@@ -42,6 +47,11 @@ export enum Rank {
   DETECTIVE_2 = 'DETECTIVE_2',
   /** Detective first grade. */
   DETECTIVE_1 = 'DETECTIVE_1',
+  /**
+   * A generic detective. Currently, this is only used in the rank history,
+   * where it doesn't include the detective grade.
+   */
+  DETECTIVE = 'DETECTIVE',
   DETECTIVE_SPECIALIST = 'DETECTIVE_SPECIALIST',
   /** Sergeant special assignment. */
   SERGEANT_SPECIAL = 'SERGEANT_SPECIAL',
@@ -118,4 +128,17 @@ export enum Ethnicity {
   HISPANIC = 'HISPANIC',
   NATIVE_AMERICAN = 'NATIVE_AMERICAN',
   WHITE = 'WHITE',
+}
+
+/** A single event in an officer's rank history. */
+export interface RankHistoryEntry {
+  /** The date this rank and shield number became effective. */
+  readonly effectiveDate: Date;
+  /** The rank as of the given date. */
+  readonly rank: Rank;
+  /**
+   * The shield number as of the given date. This is optional as ranks
+   * lieutenant and above don't have one.
+   */
+  readonly shieldNumber?: number;
 }
